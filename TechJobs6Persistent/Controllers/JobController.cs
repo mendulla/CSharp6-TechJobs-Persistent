@@ -8,8 +8,6 @@ using TechJobs6Persistent.Data;
 using TechJobs6Persistent.Models;
 using TechJobs6Persistent.ViewModels;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace TechJobs6Persistent.Controllers
 {
     public class JobController : Controller
@@ -25,25 +23,49 @@ namespace TechJobs6Persistent.Controllers
         public IActionResult Index()
         {
             List<Job> jobs = context.Jobs.Include(j => j.Employer).ToList();
-
             return View(jobs);
         }
 
         public IActionResult Add()
         {
-            return View();
+            // Get the list of all employers to be displayed in the dropdown
+            List<Employer> employers = context.Employers.ToList();
+            AddJobViewModel addJobViewModel = new AddJobViewModel(employers);
+            return View(addJobViewModel);
         }
 
         [HttpPost]
-        public IActionResult ProcessAddJobForm()
+        public IActionResult Add(AddJobViewModel addJobViewModel)
         {
-            return View();
+            if (ModelState.IsValid)
+            {
+                Employer employer = context.Employers.Find(addJobViewModel.EmployerId);
+
+                Job newJob = new Job
+                {
+                    Name = addJobViewModel.Name,
+                    Employer = employer
+                };
+
+                context.Jobs.Add(newJob);
+                context.SaveChanges();
+
+                return Redirect("/Job"); // Redirect to the Job index page
+            }
+
+            List<Employer> employers = context.Employers.ToList();
+            addJobViewModel.Employers = employers.Select(e => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = e.Id.ToString(),
+                Text = e.Name
+            }).ToList();
+
+            return View(addJobViewModel);
         }
 
         public IActionResult Delete()
         {
             ViewBag.jobs = context.Jobs.ToList();
-
             return View();
         }
 
@@ -63,13 +85,13 @@ namespace TechJobs6Persistent.Controllers
 
         public IActionResult Detail(int id)
         {
-            Job theJob = context.Jobs.Include(j => j.Employer).Include(j => j.Skills).Single(j => j.Id == id);
+            Job theJob = context.Jobs
+                .Include(j => j.Employer)
+                .Include(j => j.Skills)
+                .Single(j => j.Id == id);
 
             JobDetailViewModel jobDetailViewModel = new JobDetailViewModel(theJob);
-
             return View(jobDetailViewModel);
-
         }
     }
 }
-
