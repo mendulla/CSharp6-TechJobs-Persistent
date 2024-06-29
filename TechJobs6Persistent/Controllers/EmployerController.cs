@@ -13,31 +13,66 @@ using TechJobs6Persistent.ViewModels;
 namespace TechJobs6Persistent.Controllers
 {
     public class EmployerController : Controller
-    { 
+    {
+        // Private variable to hold the database context
+        private JobDbContext context;
+
+        // Constructor to initialize the database context
+        public EmployerController(JobDbContext dbContext)
+        {
+            context = dbContext;
+        }
+
         // GET: /<controller>/
         [HttpGet]
         public IActionResult Index()
         {
-            return View();
+            // Retrieve all employers from the database
+            List<Employer> employers = context.Employers.ToList();
+            // Pass the list of employers to the view
+            return View(employers);
         }
 
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            // Create a new instance of AddEmployerViewModel
+            AddEmployerViewModel addEmployerViewModel = new AddEmployerViewModel();
+            // Pass the ViewModel to the view
+            return View(addEmployerViewModel);
         }
 
         [HttpPost]
-        public IActionResult ProcessCreateEmployerForm()
+        public IActionResult ProcessCreateEmployerForm(AddEmployerViewModel addEmployerViewModel)
         {
-            return View();
+            // Check if the model state is valid
+            if (ModelState.IsValid)
+            {
+                // Create a new Employer object and populate it with data from the ViewModel
+                Employer newEmployer = new Employer
+                {
+                    Name = addEmployerViewModel.Name,
+                    Location = addEmployerViewModel.Location
+                };
+
+                // Add the new employer to the database and save changes
+                context.Employers.Add(newEmployer);
+                context.SaveChanges();
+
+                // Redirect to the Index action method
+                return Redirect("/Employer");
+            }
+
+            // If model state is not valid, return to the Create view with the ViewModel
+            return View("Create", addEmployerViewModel);
         }
 
         public IActionResult About(int id)
         {
-            return View();
+            // Find the employer with the specified id in the database
+            Employer employer = context.Employers.Find(id);
+            // Pass the employer to the view
+            return View(employer);
         }
-
     }
 }
-
